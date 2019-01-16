@@ -7,7 +7,7 @@ import json
 import os
 import re
 
-es=Elasticsearch(hosts='39.108.223.105',port=9200)
+es=Elasticsearch(hosts='',port=)
 
 def re_find(xx,source_):
 	rex = re.compile(xx)
