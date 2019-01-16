@@ -8,7 +8,7 @@ import json
 import os
 import re
 
-es=Elasticsearch(hosts='172.16.0.23',port=9200)
+es=Elasticsearch(hosts='',port=)
 #-----------------------------------------------------------------------------------------------
 def string_toDatetime(st):
 	#print("把字符串转成datetime: ", datetime.datetime.strptime(st, "%Y-%m-%d %H:%M:%S"))
