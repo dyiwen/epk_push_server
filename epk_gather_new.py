@@ -1,44 +1,21 @@
 #!-*-coding:utf8-*-
-import random
-from elasticsearch import Elasticsearch
-from elasticsearch import helpers
+
+import os
 import datetime
 import time
-import json
-import os
-import re
+from tools import re_job, string_toDatetime
+from elasticsearch import Elasticsearch
+from elasticsearch import helpers
 
-es=Elasticsearch(hosts='',port=)
-#-----------------------------------------------------------------------------------------------
-def string_toDatetime(st):
-	#print("把字符串转成datetime: ", datetime.datetime.strptime(st, "%Y-%m-%d %H:%M:%S"))
-	return datetime.datetime.strptime(st, "%Y-%m-%d %H:%M:%S")
 
-def re_find(xx,source_):
-	rex = re.compile(xx)
-	result = rex.findall(source_)
-	return result
 
-def delete_action(index_):   #清空index下所有日志
-	query = {'query': {'match_all': {}}}
-	# allDoc = es.search(index='log_level', doc_type='doc', body=query)
-	del_result = es.delete_by_query(index=index_, body=query, doc_type='doc')
-	print del_result
-
-def delete_index(index_):   #删除标签
-	cmd = "curl -XDELETE 'http://172.16.0.23:9200/{}'".format(index_)
-	print os.popen(cmd).read()
-
-def index_action():
-    es.index(index="my-index", doc_type="doc", id=42, body={"any": "data", "timestamp": datetime.datetime.now()})
-#-----------------------------------------------------------------------------------------------
 
 def tran_json(init_list,index_):
 	actions = []
 	for line in init_list:
 		# print line
 		line = line.decode('utf8')
-		result = re_find(r'(.*?)\s\[(.*?)\]\s(\w+)\s([\s\S]+)',line)
+		result = re_job(r'(.*?)\s\[(.*?)\]\s(\w+)\s([\s\S]+)',line)
 		# print result
 		time_ = string_toDatetime(result[0][0][:-4]) + datetime.timedelta(hours=-8)
 		action = {'_op_type':'index',
@@ -55,7 +32,7 @@ def tran_json(init_list,index_):
 		"@timestamp":[time_]}}
 		# i += 1
 		actions.append(action)
-	# print actions
+	print actions
 	print len(actions)
 	#////////////////////////////////////////////////////////////
 	helpers.bulk(client=es,actions=actions,raise_on_error=True,request_timeout=30)
@@ -66,11 +43,13 @@ def tran_json(init_list,index_):
 	#///////////////////////////////////////////////////////////
 
 
-def init_list(path_):
+
+def init_list(name_,path_):
 	# i = 1
 	for file_ in os.listdir(path_):
 		print file_
-		index_ = re_find(r'(.*?).2018',file_)[0]
+		index_ = re_job(r'tqlh(.*?).20',file_)[0]
+		print name_+index_
 		with open(os.path.join(path_,file_)) as f:
 			match_y = []
 			match_n = []
@@ -84,7 +63,7 @@ def init_list(path_):
 				# print line.decode('utf8')
 				# line = line.decode('utf8')
 				xx = r"^\d{4}-\d{2}-\d{2}\s"
-				result = re_find(xx,line)
+				result = re_job(xx,line)
 				num_result, num_str, num_list = len(result), len(line_str), len(line_list)
 				if num_result <> 0 and num_str == 0:
 					line_list.append(line)
@@ -106,13 +85,13 @@ def init_list(path_):
 					line_list.append(line) 
 			print '报错',len(match_n)
 			print "*"*50
-			# print len(match_y)
-			# print "-"*50
-			# for j in match_n:
-			# 	print j
-			# 	print '-'*50
-		tran_json(match_y+match_n,index_)
-		time.sleep(5)
+			print match_y+match_n
+			print len(match_y+match_n)
+			tran_json(match_y+match_n,name_ + index_)
+			break
+
+
 
 if __name__ == '__main__':
-	init_list('/home/dyiwen/workspace/elasticsearch/python-es/logs')
+	es=Elasticsearch(hosts='39.108.223.105',port=9200)
+	init_list("tqlh","/home/dyiwen/workspace/elasticsearch/python-es/logs")
