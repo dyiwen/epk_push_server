@@ -110,19 +110,18 @@ class ESearch(object):
 					self.post_(actions)
 					line_list = []
 				elif all([num_result==0,num_list==1]):
-
-				if len(match_y) == 1:
-					actions = self.format_(match_y,index)
-					self.post_(actions)
-					match_y = []
-				elif len(match_y) > 1:
-					match_y.pop()
-					actions = self.format_(match_y,index)
-					self.post_(actions)
-					match_y = []
-					line_list.append(line)
-				elif all([num_result==0,num_list>1]):
-					line_list.append(line)
+					if len(match_y) == 1:
+						actions = self.format_(match_y,index)
+						self.post_(actions)
+						match_y = []
+					elif len(match_y) > 1:
+						match_y.pop()
+						actions = self.format_(match_y,index)
+						self.post_(actions)
+						match_y = []
+						line_list.append(line)
+					elif all([num_result==0,num_list>1]):
+						line_list.append(line)
 
 
 
