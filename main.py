@@ -4,7 +4,6 @@
 from multiprocessing import cpu_count,Process,JoinableQueue
 from clawer import ESearch
 from logger_ import err,warn,out
-from goods import monthlist
 from dict_ import container_info
 import traceback
 import datetime
@@ -22,12 +21,12 @@ class MutilServer(object):
 	def Pushlog(self,item):
 		try:
 			startime = time.time()
-			out('查询{}：  {}至{}'.format(self.method,item[0],item[1]))
+			out('开始收集 {} 的日志'.format(item))
 			self.es.main(item,container_info[item])
 			elapsed = (time.time() - startime)
 			out('单次任务耗时 {}'.format(round(elapsed/60,2)))
 		except:
-			err('{}接口报错 {}-{}'.format(self.method,item[0],item[1]))
+			err('{} 日志收集接口报错'.format(item))
 			err(traceback.format_exc())
 
 
@@ -47,7 +46,6 @@ class MutilServer(object):
 			cpuCount = 3
 			multiprocessing = []
 			out("主服务开始运行...")
-			out("开始查询表 {}".format(self.method))
 
 			for i in xrange(0,cpuCount):
 				p = Process(target=self.Worker,args=(self.q,))
