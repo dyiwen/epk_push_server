@@ -106,16 +106,12 @@ class ESearch(object):
 							# print('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
 							print("#"*60)
 							line_list = []
+							line_list.append(line)
 						elif all([num_result==0,num_list==1]):
 							if len(match_y) == 1:
-								# actions = self.format_(match_y,index)
-								# self.post_(actions)
-								print("#"*60)
-								print match_y
-								# print('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
-								print("#"*60)
-								match_y = []
-							elif len(match_y) > 1:
+								match_y.pop()
+								line_list.append(line)
+							if len(match_y) > 1:
 								match_y.pop()
 								# actions = self.format_(match_y,index)
 								# self.post_(actions)
@@ -125,8 +121,8 @@ class ESearch(object):
 								print("#"*60)
 								match_y = []
 								line_list.append(line)
-							elif all([num_result==0,num_list>1]):
-								line_list.append(line)
+						elif all([num_result==0,num_list>1]):
+							line_list.append(line)
 					else:
 						container_list = docker_info()
 						if container_name not in container_list:
