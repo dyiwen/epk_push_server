@@ -7,7 +7,7 @@ import re
 import subprocess
 import socket
 import traceback
-from tools import re_job, string_toDatetime
+from tools import re_job, string_toDatetime, docker_info
 from logger_ import out, err
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
@@ -68,32 +68,27 @@ class ESearch(object):
 			# for line in f:
 				# print(line)
 		while 1:
-                        cmd = "docker ps -a | grep '{}'|awk {{'print $13$14'}}".format(container_name)
-                        out(cmd)
-			search_result = os.popen(cmd).read()
-			if container_name in search_result:
-                                out('开始收集容器 {} 的日志'.format(container_name))
-				p = subprocess.Popen("docker logs -f --since='2019-07-10' {}".format(container_name), shell=True,
+			container_list = docker_info()
+			if container_name in container_list:
+				out('开始收集容器 {} 的日志'.format(container_name))
+				p = subprocess.Popen("docker logs -f --since='{}' {}".format(container_name,
+					datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d')), shell=True,
 					stdout=subprocess.PIPE,stderr=subprocess.PIPE,)
 
-				n = 0
 				match_y = []
 				match_n = []
 				line_list = []
-				time_list = []
 
 				while 1:
 					line = p.stdout.readline()
 					if line:
-                                                print line
 						# out('{}容器的日志{}'.format(container_name,line))
-						n += 1
 
 						# xx = r'(.*?)\s+(\w+\s\d+)\s---\s\[(.*?)\]\s(.*)\s([\d\D]*)'
 						xx = r"^\d{4}-\d{2}-\d{2}\s"
 						result = re_job(xx,line)
 						#print(result)
-						#out('-'*70)
+						out('-'*70)
 						num_result, num_list = len(result), len(line_list)
 						if all([num_result!=0,num_list==0]):
 							match_y.append(line)
@@ -104,29 +99,42 @@ class ESearch(object):
 							line_list.append(line)
 						elif all([num_result!=0,num_list>1]):
 							match_y.append(line)
-							actions = self.format_([''.join(line_list)],index)
-                                                        print ''.join(line_list)
-							#self.post_(actions)
+							# actions = self.format_([''.join(line_list)],index)
+							# self.post_(actions)
+							print("#"*60)
+							print line_list
+							# print('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
+							print("#"*60)
 							line_list = []
 						elif all([num_result==0,num_list==1]):
 							if len(match_y) == 1:
-								actions = self.format_(match_y,index)
-                                                                print match_y
-								#self.post_(actions)
+								# actions = self.format_(match_y,index)
+								# self.post_(actions)
+								print("#"*60)
+								print match_y
+								# print('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
+								print("#"*60)
 								match_y = []
 							elif len(match_y) > 1:
 								match_y.pop()
-								actions = self.format_(match_y,index)
-								#self.post_(actions)
-                                                                print match_y
+								# actions = self.format_(match_y,index)
+								# self.post_(actions)
+								print("#"*60)
+								print match_y
+								# print('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
+								print("#"*60)
 								match_y = []
 								line_list.append(line)
 							elif all([num_result==0,num_list>1]):
 								line_list.append(line)
 					else:
-						if 'Exited' in os.popen("docker ps -a | grep '{}'|awk {{'print $9'}}".format(container_name)).read():
-                                                        err('发现容器 {} 关闭,等待重启服务'.format(container_name))
+						container_list = docker_info()
+						if container_name not in container_list:
+							print('发现 {} 服务关闭，等待重启服务'.format(container_name))
 							break
+						else:
+							pass
+
 			else:
 				time.sleep(1)
 
@@ -141,4 +149,4 @@ class ESearch(object):
 
 if __name__ == '__main__':
         a = ESearch('172.18.204.170',9200)
-        a.main('node1_qc_backend','qc_back_prod_1')
+        a.main('','')

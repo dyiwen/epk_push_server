@@ -7,7 +7,7 @@ import re
 import subprocess
 import socket
 import traceback
-from tools import re_job, string_toDatetime
+from tools import re_job, string_toDatetime, docker_info
 from logger_ import out, err
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
@@ -68,25 +68,21 @@ class ESearch(object):
 			# for line in f:
 				# print(line)
 		while 1:
-                        cmd = "docker ps -a | grep '{}'|awk {{'print $13$14'}}".format(container_name)
-                        out(cmd)
-			search_result = os.popen(cmd).read()
-			if container_name in search_result:
-                                out('开始收集容器 {} 的日志'.format(container_name))
-				p = subprocess.Popen("docker logs -f --since='2019-07-10' {}".format(container_name), shell=True,
+			container_list = docker_info()
+			if container_name in container_list:
+				out('开始收集容器 {} 的日志'.format(container_name))
+				p = subprocess.Popen("docker logs -f --since='{}' {}".format(container_name,
+					datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d')), shell=True,
 					stdout=subprocess.PIPE,stderr=subprocess.PIPE,)
 
-				n = 0
 				match_y = []
 				match_n = []
 				line_list = []
-				time_list = []
 
 				while 1:
 					line = p.stdout.readline()
 					if line:
 						# out('{}容器的日志{}'.format(container_name,line))
-						n += 1
 
 						# xx = r'(.*?)\s+(\w+\s\d+)\s---\s\[(.*?)\]\s(.*)\s([\d\D]*)'
 						xx = r"^\d{4}-\d{2}-\d{2}\s"
@@ -129,9 +125,13 @@ class ESearch(object):
 							elif all([num_result==0,num_list>1]):
 								line_list.append(line)
 					else:
-						if 'Exited' in os.popen("docker ps -a | grep '{}'|awk {{'print $9'}}".format(container_name)).read():
-                                                        err('发现容器 {} 关闭,等待重启服务'.format(container_name))
+						container_list = docker_info()
+						if container_name not in container_list:
+							out('发现 {} 服务关闭，等待重启服务'.format(container_name))
 							break
+						else:
+							pass
+
 			else:
 				time.sleep(1)
 
