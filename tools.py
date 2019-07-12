@@ -1,6 +1,7 @@
 #!-*-coding:utf8-*-
 
 import re
+import docker
 from datetime import datetime, date, timedelta
 
 def re_job(xx,source):
@@ -17,5 +18,13 @@ def Yesterdate_():
 	yesterday = date.today() + timedelta(days = -1)
 	return str(yesterday)
 
+
+def docker_info():
+        client = docker.from_env()
+        container_names = [i.attrs['Name'].lstrip('/')  for i in client.containers.list()]
+        print container_names
+
+
+
 if __name__ == '__main__':
-	print(Yesterdate_())
+        docker_info()

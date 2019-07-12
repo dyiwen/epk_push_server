@@ -68,9 +68,12 @@ class ESearch(object):
 			# for line in f:
 				# print(line)
 		while 1:
-			search_result = os.popen("docker ps -a | grep '{}' | awk {'print $13'}".format(container_name)).read()
+                        cmd = "docker ps -a | grep '{}'|awk {{'print $13$14'}}".format(container_name)
+                        out(cmd)
+			search_result = os.popen(cmd).read()
 			if container_name in search_result:
-				p = subprocess.Popen("docker logs -f --since='2019-07-08' {}".format(container_name), shell=True,
+                                out('开始收集容器 {} 的日志'.format(container_name))
+				p = subprocess.Popen("docker logs -f --since='2019-07-10' {}".format(container_name), shell=True,
 					stdout=subprocess.PIPE,stderr=subprocess.PIPE,)
 
 				n = 0
@@ -126,10 +129,11 @@ class ESearch(object):
 							elif all([num_result==0,num_list>1]):
 								line_list.append(line)
 					else:
-						if 'Exited' in os.popen("docker ps -a | grep '{}'|awk {'print $9'}".format(container_name)).read():
+						if 'Exited' in os.popen("docker ps -a | grep '{}'|awk {{'print $9'}}".format(container_name)).read():
+                                                        err('发现容器 {} 关闭,等待重启服务'.format(container_name))
 							break
 			else:
-				time.sleep(5)
+				time.sleep(1)
 
 
 
