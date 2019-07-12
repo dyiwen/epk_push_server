@@ -71,9 +71,8 @@ class ESearch(object):
 			container_list = docker_info()
 			if container_name in container_list:
 				out('开始收集容器 {} 的日志'.format(container_name))
-				p = subprocess.Popen("docker logs -f --since='{}' {}".format(container_name,
-					datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d')), shell=True,
-					stdout=subprocess.PIPE,stderr=subprocess.PIPE,)
+                                cmd = "docker logs -f --since='{}' {}".format(datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d'),container_name)
+				p = subprocess.Popen(cmd, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,)
 
 				match_y = []
 				match_n = []
@@ -102,7 +101,7 @@ class ESearch(object):
 							# actions = self.format_([''.join(line_list)],index)
 							# self.post_(actions)
 							print("#"*60)
-							print line_list
+							for i in line_list:print i
 							# print('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
 							print("#"*60)
 							line_list = []
@@ -116,7 +115,7 @@ class ESearch(object):
 								# actions = self.format_(match_y,index)
 								# self.post_(actions)
 								print("#"*60)
-								print match_y
+								#print match_y
 								# print('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
 								print("#"*60)
 								match_y = []
@@ -145,4 +144,4 @@ class ESearch(object):
 
 if __name__ == '__main__':
         a = ESearch('172.18.204.170',9200)
-        a.main('','')
+        a.main('node2_qc_backend','')
