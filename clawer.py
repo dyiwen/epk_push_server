@@ -71,9 +71,8 @@ class ESearch(object):
 			container_list = docker_info()
 			if container_name in container_list:
 				out('开始收集容器 {} 的日志'.format(container_name))
-				p = subprocess.Popen("docker logs -f --since='{}' {}".format(container_name,
-					datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d')), shell=True,
-					stdout=subprocess.PIPE,stderr=subprocess.PIPE,)
+				cmd = "docker logs -f --since='{}' {}".format(datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d'),container_name)
+				p = subprocess.Popen(cmd, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,)
 
 				match_y = []
 				match_n = []
@@ -101,29 +100,22 @@ class ESearch(object):
 							match_y.append(line)
 							actions = self.format_([''.join(line_list)],index)
 							self.post_(actions)
-							out("#"*60)
-							out('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
-							out("#"*60)
+							out('异常:容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
 							line_list = []
+							line_list.append(line)
 						elif all([num_result==0,num_list==1]):
 							if len(match_y) == 1:
-								actions = self.format_(match_y,index)
-								self.post_(actions)
-								out("#"*60)
-								out('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
-								out("#"*60)
-								match_y = []
-							elif len(match_y) > 1:
+								match_y.pop()
+								line_list.append(line)
+							if len(match_y) > 1:
 								match_y.pop()
 								actions = self.format_(match_y,index)
 								self.post_(actions)
-								out("#"*60)
-								out('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
-								out("#"*60)
+								out('正常:容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
 								match_y = []
 								line_list.append(line)
-							elif all([num_result==0,num_list>1]):
-								line_list.append(line)
+						elif all([num_result==0,num_list>1]):
+							line_list.append(line)
 					else:
 						container_list = docker_info()
 						if container_name not in container_list:
