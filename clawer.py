@@ -7,7 +7,7 @@ import re
 import subprocess
 import socket
 import traceback
-from tools import re_job, string_toDatetime
+from tools import re_job, string_toDatetime, docker_info
 from logger_ import out, err
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
@@ -68,25 +68,20 @@ class ESearch(object):
 			# for line in f:
 				# print(line)
 		while 1:
-                        cmd = "docker ps -a | grep '{}'|awk {{'print $13$14'}}".format(container_name)
-                        out(cmd)
-			search_result = os.popen(cmd).read()
-			if container_name in search_result:
-                                out('开始收集容器 {} 的日志'.format(container_name))
-				p = subprocess.Popen("docker logs -f --since='2019-07-10' {}".format(container_name), shell=True,
-					stdout=subprocess.PIPE,stderr=subprocess.PIPE,)
+			container_list = docker_info()
+			if container_name in container_list:
+				out('开始收集容器 {} 的日志'.format(container_name))
+				cmd = "docker logs -f --since='{}' {}".format(datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d'),container_name)
+				p = subprocess.Popen(cmd, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,)
 
-				n = 0
 				match_y = []
 				match_n = []
 				line_list = []
-				time_list = []
 
 				while 1:
 					line = p.stdout.readline()
 					if line:
 						# out('{}容器的日志{}'.format(container_name,line))
-						n += 1
 
 						# xx = r'(.*?)\s+(\w+\s\d+)\s---\s\[(.*?)\]\s(.*)\s([\d\D]*)'
 						xx = r"^\d{4}-\d{2}-\d{2}\s"
@@ -105,33 +100,30 @@ class ESearch(object):
 							match_y.append(line)
 							actions = self.format_([''.join(line_list)],index)
 							self.post_(actions)
-							out("#"*60)
-							out('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
-							out("#"*60)
+							out('异常:容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
 							line_list = []
+							line_list.append(line)
 						elif all([num_result==0,num_list==1]):
 							if len(match_y) == 1:
-								actions = self.format_(match_y,index)
-								self.post_(actions)
-								out("#"*60)
-								out('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
-								out("#"*60)
-								match_y = []
-							elif len(match_y) > 1:
+								match_y.pop()
+								line_list.append(line)
+							if len(match_y) > 1:
 								match_y.pop()
 								actions = self.format_(match_y,index)
 								self.post_(actions)
-								out("#"*60)
-								out('容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
-								out("#"*60)
+								out('正常:容器{} 发送了 {} 条数据，到es'.format(container_name,len(actions)))
 								match_y = []
 								line_list.append(line)
-							elif all([num_result==0,num_list>1]):
-								line_list.append(line)
+						elif all([num_result==0,num_list>1]):
+							line_list.append(line)
 					else:
-						if 'Exited' in os.popen("docker ps -a | grep '{}'|awk {{'print $9'}}".format(container_name)).read():
-                                                        err('发现容器 {} 关闭,等待重启服务'.format(container_name))
+						container_list = docker_info()
+						if container_name not in container_list:
+							out('发现 {} 服务关闭，等待重启服务'.format(container_name))
 							break
+						else:
+							pass
+
 			else:
 				time.sleep(1)
 
