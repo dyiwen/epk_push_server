@@ -22,6 +22,8 @@ def Yesterdate_():
 def docker_info():
         client = docker.from_env()
         container_names = [i.attrs['Name'].lstrip('/')  for i in client.containers.list()]
+        for i in client.containers.list():
+                print i.attrs
         print container_names
 
 

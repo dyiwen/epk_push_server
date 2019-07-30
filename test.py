@@ -141,4 +141,4 @@ class ESearch(object):
 
 if __name__ == '__main__':
         a = ESearch('172.18.204.170',9200)
-        a.main('node1_qc_backend','qc_back_prod_1')
+        a.main('sso_node1','qc_back_prod_1')
